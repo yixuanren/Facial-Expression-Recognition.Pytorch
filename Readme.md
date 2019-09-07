@@ -7,13 +7,19 @@ A CNN based pytorch implementation on facial expression recognition (FER2013 and
 
 ## Dependencies ##
 - Python 2.7
-- Pytorch >=0.2.0
+- Pytorch >=0.4.0
 - h5py (Preprocessing)
 - sklearn (plot confusion matrix)
 
 ## Visualize for a test image by a pre-trained model ##
 - Firstly, download the pre-trained model from https://drive.google.com/open?id=1Oy_9YmpkSKX1Q8jkOhJbz3Mc7qjyISzU and then put it in the "FER2013_VGG19" folder; Next, Put the test image (rename as 1.jpg) into the "images" folder, then 
-- python visualize.py
+- `python visualize.py`
+
+### Extract representations from other datasets ###
+- Currently I use the prediction confidence (the output of the last layer before softmax) as the representations. It can be also easy to get the output of any other layers;
+- Other datasets can be any ImageFolder dataset. For now I use a center-croped version of CelebA (128x128) downloaded from https://drive.google.com/file/d/1jsy1NN4LojSpjaG_BLvNJl-81TKbNaxj/view?usp=sharing;
+- After downloading and unziping, you need to put the folder somewhere and modify the path in `visualize.py` correspondingly;
+- Finally, run `python visualize.py`, and an `.npz` file will be dumped to disk with representations of all images in order. (I also uploaded the one I generated.)
 
 ## FER2013 Dataset ##
 - Dataset from https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data
