@@ -16,10 +16,10 @@ A CNN based pytorch implementation on facial expression recognition (FER2013 and
 - `python visualize.py`
 
 ### Extract representations from other datasets ###
-- Currently I use the prediction confidence (the output of the last layer before softmax) as the representations. It can be also easy to get the output of any other layers;
-- Other datasets can be any ImageFolder dataset. For now I use a center-croped version of CelebA (128x128) downloaded from https://drive.google.com/file/d/1jsy1NN4LojSpjaG_BLvNJl-81TKbNaxj/view?usp=sharing;
+- There are two versions in terms of the representations by now: the initial version is the prediction confidence (the output of the last layer before softmax), whose dimension is 7; the second version the output of the second last layer (after activation), with the dimension of 512, which is the default option;
+- Other datasets can be any ImageFolder dataset. For now I use a center-croped version of CelebA (128x128) shared at https://drive.google.com/file/d/1jsy1NN4LojSpjaG_BLvNJl-81TKbNaxj/view?usp=sharing;
 - After downloading and unziping, you need to put the folder somewhere and modify the path in `visualize.py` correspondingly;
-- Finally, run `python visualize.py`, and an `.npz` file will be dumped to disk with representations of all images in order. (I also uploaded the one I generated.)
+- Finally, run `python visualize.py`, and an `.npz` file will be dumped to disk with representations of all images in order. (The one I generated can be downloaded at https://drive.google.com/file/d/1GH7myZpmmLzA40i3G9p865l3TZLPWOAX/view?usp=sharing.)
 
 ## FER2013 Dataset ##
 - Dataset from https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data

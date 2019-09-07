@@ -68,16 +68,18 @@ for filename in tqdm(sorted(os.listdir(dataroot))):
 	inputs = inputs.view(-1, c, h, w)
 	inputs = inputs.cuda()
 	with torch.no_grad():
-		outputs = net(inputs)
+		rep, outputs = net(inputs)
 	
 	outputs_avg = outputs.view(ncrops, -1).mean(0)  # avg over crops
+	rep_avg = rep.view(ncrops, -1).mean(0)  # avg over crops
 	
 	score = F.softmax(outputs_avg, dim=0)
 	_, predicted = torch.max(outputs_avg.data, 0)
 	
 #	set_trace()
 	
-	rep_list.append(score.cpu().tolist())
+#	rep_list.append(score.cpu().tolist())  # Version 1: the output of the last layer (fc) before softmax
+	rep_list.append(rep_avg.cpu().tolist())  # Version 2: the output of the second last layer (after activation)
 	
 	'''
 	plt.rcParams['figure.figsize'] = (13.5,5.5)
