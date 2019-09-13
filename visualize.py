@@ -11,12 +11,13 @@ import torch.nn.functional as F
 import os
 from torch.autograd import Variable
 
-import transforms as transforms
+#import transforms as transforms
 from skimage import io
 from skimage.transform import resize
 from models import *
 
-from torchvision import datasets
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from pdb import set_trace
@@ -34,7 +35,7 @@ rep_list = []
 
 
 cut_size = 44
-
+'''
 transform_test = transforms.Compose([
 	transforms.TenCrop(cut_size),
 	transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
@@ -42,15 +43,31 @@ transform_test = transforms.Compose([
 
 def rgb2gray(rgb):
 	return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+'''
+transform_test = transforms.Compose([
+	transforms.Grayscale(3),
+	transforms.Resize(48),
+	transforms.TenCrop(cut_size),
+	transforms.Lambda(lambda crops: torch.stack([transforms.ToTensor()(crop) for crop in crops])),
+])
 
-#dataroot = '/data/workplace/CelebA_128crop_FD/CelebA'
-#test_set = datasets.ImageFolder(root=dataroot, transform=transform_test)
-#TODO: Mini-Batch Inference
+dataroot = '/data/workplace/CelebA'
+test_set = datasets.ImageFolder(root=dataroot, transform=transform_test)
 
-dataroot = '/data/workplace/CelebA/128_crop'
+dataloader = DataLoader(test_set, batch_size=64, shuffle=False, num_workers=4)
 
-for filename in tqdm(sorted(os.listdir(dataroot))):
-	
+#dataroot = '/data/workplace/CelebA/128_crop'
+#test_set = sorted(os.listdir(dataroot))
+
+preds = np.zeros(len(test_set), dtype=np.uint8)
+
+# WARNING: Mini-batch and single-image inference can give different outputs!
+# Haven't figured out why yet...
+
+#for i in tqdm(range(len(test_set))):
+for i, data in enumerate(tqdm(dataloader)):
+	'''
+	filename = test_set[i]
 	raw_img = io.imread(dataroot+'/'+filename)
 	gray = rgb2gray(raw_img)
 	gray = resize(gray, (48,48), mode='symmetric').astype(np.uint8)
@@ -60,26 +77,33 @@ for filename in tqdm(sorted(os.listdir(dataroot))):
 	img = np.concatenate((img, img, img), axis=2)
 	img = Image.fromarray(img)
 	inputs = transform_test(img)
+	'''
+	
+	inputs, _ = data
 	
 #	set_trace()
 	
-	ncrops, c, h, w = np.shape(inputs)
+	bs, ncrops, c, h, w = np.shape(inputs)
 	
 	inputs = inputs.view(-1, c, h, w)
 	inputs = inputs.cuda()
 	with torch.no_grad():
 		rep, outputs = net(inputs)
 	
-	outputs_avg = outputs.view(ncrops, -1).mean(0)  # avg over crops
-	rep_avg = rep.view(ncrops, -1).mean(0)  # avg over crops
-	
-	score = F.softmax(outputs_avg, dim=0)
-	_, predicted = torch.max(outputs_avg.data, 0)
-	
 #	set_trace()
 	
+	outputs_avg = outputs.view(bs, ncrops, -1).mean(1)  # avg over crops
+	rep_avg = rep.view(bs, ncrops, -1).mean(1)  # avg over crops
+	
+	score = F.softmax(outputs_avg, dim=1)
+	_, predicted = torch.max(outputs_avg.data, 1)
+	
+	set_trace()
+	
+	preds[i*64:i*64+bs] = predicted.cpu().numpy()  # For filtering to get a balanced subset
+	
 #	rep_list.append(score.cpu().tolist())  # Version 1: the output of the last layer (fc) before softmax
-	rep_list.append(rep_avg.cpu().tolist())  # Version 2: the output of the second last layer (after activation)
+#	rep_list.append(rep_avg.cpu().tolist())  # Version 2: the output of the second last layer (after activation)
 	
 	'''
 	plt.rcParams['figure.figsize'] = (13.5,5.5)
@@ -119,7 +143,10 @@ for filename in tqdm(sorted(os.listdir(dataroot))):
 	print("The Expression is %s" %str(class_names[int(predicted.cpu().numpy())]))
 	'''
 
-#set_trace()
+set_trace()
+
+np.savez_compressed('preds', preds)
+print('preds.npz saved')
 
 np.savez_compressed('rep_list', rep_list)
 print('rep_list.npz saved')
